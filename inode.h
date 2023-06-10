@@ -1,8 +1,11 @@
+#ifndef INODE_H
+#define INODE_H
+
+#include <stdint.h>
 #include <time.h>
 
-#define MAX_BLOCKS 10 // Número máximo de blocos de dados
+#define MAX_BLOCKS 10 // Número máximo de endereços de blocos
 
-typedef struct data_block * dtb;
 
 typedef struct {
     char filename[256];     // Nome do arquivo
@@ -31,3 +34,5 @@ typedef struct block{
 
 gerenciador de partiçao tem lista 10.000
 partição[0] = inode os endereços do dado (3 data_blocks)
+
+#endif
