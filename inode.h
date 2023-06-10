@@ -17,8 +17,8 @@ typedef struct {
     time_t created_at; // Criado em...
     time_t modified_at; // Modificado em...
     time_t last_accessed_at; // Acessado em...
-    int direct_blocks[MAX_BLOCK_POINTERS]; // Endereços de blocos diretos
-    int indirect_block; // Endereço de bloco indireto para referenciar mais blocos de dados, se necessário
+    int32_t direct_blocks[MAX_BLOCK_POINTERS]; // Endereços de blocos diretos
+    int32_t indirect_block; // Endereço de bloco indireto para referenciar mais blocos de dados, se necessário
 } INode;
 
 /*

@@ -17,5 +17,5 @@ typedef struct {
 /*
 tamanho partição: 10MB a 100MB
 tamanho bloco: 1KB a 4KB
-tamanho de um endereço de bloco: 4bytes
+tamanho de um endereço de bloco: 4bytes (int32_t)
 */
