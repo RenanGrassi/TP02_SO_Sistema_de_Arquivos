@@ -34,6 +34,7 @@ int main(void) {
 
     Partition *partition = malloc(sizeof(Partition));
     partition_init(partition);
+    partition_create_file(partition, "lorem_ipsum.txt");
 
 
     // TODO: menu

@@ -75,17 +75,27 @@ bool partition_create_file(Partition *partition, char *filename) {
                     memcpy(partition->data_blocks[address].data, buffer, BLOCK_SIZE);
 
                     partition->inodes[i].direct_blocks[j] = address;
+                    partition->free_blocks_bitmap[address] = 1;
                 }
 
 
                 address = partition_find_free_block(partition);
                 partition->inodes[i].indirect_block = address;
+                partition->free_blocks_bitmap[address] = 1;
+
 
                 // preenche os blocos indiretos
-                for (int j = 0; j < n_blocks_file-1; j++) {
+                int remaining_blocks = n_blocks_file - 1 - N_DIRECT_BLOCKS;
+                for (int j = 0; j < remaining_blocks; j++) {
+                    // se for o ultimo bloco, zera o buffer para garantir escrita correta
+                    if (j == remaining_blocks-1) {
+                        memset(buffer, 0, BLOCK_SIZE);
+                    }
                     fread(buffer, 1, BLOCK_SIZE, file);
 
                     address = partition_find_free_block(partition);
+                    partition->free_blocks_bitmap[address] = 1;
+
                     // copiando dados para o arquivo simulado
                     memcpy(partition->data_blocks[address].data, buffer, BLOCK_SIZE);
 
@@ -97,12 +107,16 @@ bool partition_create_file(Partition *partition, char *filename) {
 
             // se couber nos enderecos diretos
             else {
+                char buffer[BLOCK_SIZE];
                 for (int j = 0; j < n_blocks_file; j++) {
-                    char buffer[BLOCK_SIZE];
-
+                    if (j == n_blocks_file-1) {
+                        memset(buffer, 0, BLOCK_SIZE);
+                    }
                     fread(buffer, 1, BLOCK_SIZE, file);
 
                     uint32_t address = partition_find_free_block(partition);
+                    partition->free_blocks_bitmap[address] = 1;
+
                     // copiando dados para o arquivo simulado
                     memcpy(partition->data_blocks[address].data, buffer, BLOCK_SIZE);
 
