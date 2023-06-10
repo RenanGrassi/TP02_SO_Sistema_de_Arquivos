@@ -8,7 +8,7 @@
 
 #include "directory_entry.h"
 
-#define MAX_BLOCK_POINTERS 10
+#define N_DIRECT_BLOCKS 10
 
 typedef struct {
     char filename[MAX_FILENAME_SIZE]; // Nome do arquivo com tamanho fixo
@@ -18,7 +18,7 @@ typedef struct {
     time_t created_at; // Criado em...
     time_t modified_at; // Modificado em...
     time_t last_accessed_at; // Acessado em...
-    int32_t direct_blocks[MAX_BLOCK_POINTERS]; // Endereços de blocos diretos
+    int32_t direct_blocks[N_DIRECT_BLOCKS]; // Endereços de blocos diretos
     int32_t indirect_block; // Endereço de bloco indireto para referenciar mais blocos de dados, se necessário
 } INode;
 
@@ -33,12 +33,14 @@ typedef struct {
 // Função para inicializar um Inode
 void inode_init(INode *inode);
 
-void createRootDirectory(INode* inode, char* filename);
 
-void createDirectory(INode* inode, char* filename);
 
-void renameDirectory(INode* inode, char* filename);
+// void createRootDirectory(INode* inode, char* filename);
 
-void createFile(INode* inode, char* filename);
+// void createDirectory(INode* inode, char* filename);
+
+// void renameDirectory(INode* inode, char* filename);
+
+// void createFile(INode* inode, char* filename);
 
 #endif

@@ -1,6 +1,6 @@
 CC = gcc
 MAIN_PROGRAM_NAME = main
-CFLAGS = -Wall -Wextra -pedantic -g
+CFLAGS = -Wall -Wextra -pedantic -g -lm
 
 # MACROS (os valores são definidos em tempo de preprocessamento)
 BLOCK_SIZE_KB ?= 4 	# tamanho do bloco em KB, 4 por padrao
