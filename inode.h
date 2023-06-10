@@ -6,7 +6,8 @@
 #include <string.h>
 #include <stdbool.h>
 
-// #define MAX_FILENAME_SIZE 256
+#include "directory_entry.h"
+
 #define MAX_BLOCK_POINTERS 10
 
 typedef struct {
