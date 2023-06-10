@@ -27,7 +27,9 @@ os inodes e para os blocos de dados.
 typedef struct {
     INode inodes[N_INODES]; // vetor dos inodes
     Block data_blocks[N_DATA_BLOCKS]; // vetor dos blocos de dados
+    uint8_t free_blocks_bitmap[N_DATA_BLOCKS]; // mapa de bits para controlar os blocos livres: 0 = livre, 1 = ocupado
 } Partition;
 
+void partition_init(Partition *partition);
 
 #endif

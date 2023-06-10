@@ -31,6 +31,8 @@ typedef struct {
 */
 
 // Função para inicializar um Inode
+void inode_init(INode *inode);
+
 void createRootDirectory(INode* inode, char* filename);
 
 void createDirectory(INode* inode, char* filename);

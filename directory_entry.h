@@ -12,6 +12,6 @@ typedef struct {
     uint32_t inode_address; // endereco do inode
 } DirectoryEntry;
 
-void dir_entry_init(DirectoryEntry *dir_entry, char *filename, uint32_t inode_address);
+void dir_entry_set_values(DirectoryEntry *dir_entry, char *filename, uint32_t inode_address);
 
 #endif

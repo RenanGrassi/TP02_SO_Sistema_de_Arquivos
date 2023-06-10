@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "block.h"
 #include "directory_entry.h"
@@ -15,9 +16,9 @@ int main(void) {
     block_write_address(&block1, 1, 99999);
 
     DirectoryEntry dir_entry1;
-    dir_entry_init(&dir_entry1, "test1", 123);
+    dir_entry_set_values(&dir_entry1, "test1", 123);
     DirectoryEntry dir_entry2;
-    dir_entry_init(&dir_entry2, "test2", 456);
+    dir_entry_set_values(&dir_entry2, "test2", 456);
     block_write_dir_entry(&block2, 0, dir_entry1);
     block_write_dir_entry(&block2, 1, dir_entry2);
 
@@ -29,6 +30,11 @@ int main(void) {
         DirectoryEntry dir_entry = block_read_dir_entry(block2, i);
         printf("%s, %d\n", dir_entry.filename, dir_entry.inode_address);
     }
+
+    Partition *partition = malloc(sizeof(Partition));
+    partition_init(partition);
+
+    free(partition);
     // -----------------------------------------------------------------
 
     return 0;
