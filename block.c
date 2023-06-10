@@ -1,12 +1,11 @@
 #include "block.h"
 #include "directory_entry.h"
 #include <stdint.h>
+#include <string.h>
 
 void block_init(Block *block) {
     // inicializa o bloco com zeros
-    for (int i = 0; i < N_DATA_BLOCKS; i++) {
-        block->data[i] = 0;
-    }
+    memset(block->data, 0, BLOCK_SIZE * sizeof(char));
 }
 
 // retorna o endereco em um certo indice

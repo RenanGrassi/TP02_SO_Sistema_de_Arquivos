@@ -8,8 +8,8 @@
 int main(void) {
     // -----------------------------TESTES------------------------------
     Block block1;
-    block_init(&block1);
     Block block2;
+    block_init(&block1);
     block_init(&block2);
 
     block_write_address(&block1, 0, 34567);
@@ -30,12 +30,15 @@ int main(void) {
         DirectoryEntry dir_entry = block_read_dir_entry(block2, i);
         printf("%s, %d\n", dir_entry.filename, dir_entry.inode_address);
     }
+    // -----------------------------------------------------------------
 
     Partition *partition = malloc(sizeof(Partition));
     partition_init(partition);
 
-    free(partition);
-    // -----------------------------------------------------------------
 
+    // TODO: menu
+
+
+    free(partition);
     return 0;
 }
