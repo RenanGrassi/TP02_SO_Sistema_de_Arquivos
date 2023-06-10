@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <time.h>
 #include <string.h>
+#include <stdbool.h>
 
 #define MAX_FILENAME_SIZE 256
 #define MAX_BLOCK_POINTERS 10
@@ -18,7 +19,7 @@ typedef struct {
     time_t last_accessed_at; // Acessado em...
     int direct_blocks[MAX_BLOCK_POINTERS]; // Endereços de blocos diretos
     int indirect_block; // Endereço de bloco indireto para referenciar mais blocos de dados, se necessário
-}INode;
+} INode;
 
 /*
     O campo indirect_block permite que um i-node referencie um bloco indireto, que por sua vez contém mais referências
@@ -36,6 +37,12 @@ void createDirectory(INode* inode, char* filename);
 void renameDirectory(INode* inode, char* filename);
 
 void createFile(INode* inode, char* filename);
+
+#endif
+
+
+
+
 
 /*#include <time.h>
 #define MAX_BLOCKS 10 // Número máximo de blocos de dados

@@ -7,7 +7,7 @@
 #include "block.h"
 
 typedef struct {
-    Inode inodes[N_INODES];
+    INode inodes[N_INODES];
     Block data_blocks[N_DATA_BLOCKS];
 } Partition;
 
@@ -17,5 +17,5 @@ typedef struct {
 /*
 tamanho partição: 10MB a 100MB
 tamanho bloco: 1KB a 4KB
-tamanho de um endereço: 4bytes (int32_t)
+tamanho de um endereço de bloco: 4bytes
 */
