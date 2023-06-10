@@ -13,6 +13,11 @@ intervalos definidos:
 tamanho de um endereço de bloco: 4bytes (int32_t)
 */
 
+/*
+macros uteis:
+    N_INODES: numero de blocos para inodes
+    N_DATA_BLOCKS: numero de blocos para dados
+*/
 
 /*
 Considerando que um inode ocupa um bloco, uma particao é composta por blocos

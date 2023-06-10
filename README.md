@@ -2,6 +2,11 @@
 
 ## Compilar e executar o programa
 
+### Compilar com tamanho de bloco padrão e tamanho de partição padrão
+```{bash}
+make
+```
+
 ### Compilar e executar com tamanho de bloco padrão e tamanho de partição padrão
 ```{bash}
 make run
