@@ -97,6 +97,7 @@ bool partition_insert_dir_entry(Partition *partition, INode *dir_inode, Director
     }
 
     int32_t block_address = -1;
+    // procura um bloco
     for (int i = 0; i <= N_DIRECT_BLOCKS; i++) {
         // se nao achar um espaco vazio nos blocos diretos, procura no bloco indireto
         if (i == N_DIRECT_BLOCKS) {
@@ -108,6 +109,8 @@ bool partition_insert_dir_entry(Partition *partition, INode *dir_inode, Director
                 }
 
                 dir_inode->indirect_block = block_address;
+                partition->free_blocks_bitmap[block_address] = 1;
+                partition->n_free_blocks--;
             }
         } else {
             block_address = dir_inode->direct_blocks[i];
@@ -118,13 +121,15 @@ bool partition_insert_dir_entry(Partition *partition, INode *dir_inode, Director
                 }
 
                 dir_inode->direct_blocks[i] = block_address;
+                partition->free_blocks_bitmap[block_address] = 1;
+                partition->n_free_blocks--;
             }
         }
-        partition->free_blocks_bitmap[block_address] = 1;
 
 
 
-        // procura um lugar vazio para escrever a entrada de diretorio
+
+        // procura um lugar vazio no bloco para escrever a entrada de diretorio
         for (int j = 0; j < N_DIR_ENTRIES; j++) {
             DirectoryEntry tmp = block_read_dir_entry(partition->data_blocks[block_address], j);
             if (strlen(tmp.filename) == 0) {
