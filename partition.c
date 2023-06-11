@@ -96,9 +96,11 @@ bool partition_insert_dir_entry(Partition *partition, INode *dir_inode, Director
         return false;
     }
 
-    int32_t block_address = -1;
+
     // procura um bloco
     for (int i = 0; i <= N_DIRECT_BLOCKS; i++) {
+        int32_t block_address = -1;
+
         // se nao achar um espaco vazio nos blocos diretos, procura no bloco indireto
         if (i == N_DIRECT_BLOCKS) {
             block_address = dir_inode->indirect_block;
@@ -193,7 +195,7 @@ bool partition_create_file(Partition *partition, char *filename, INode *dir_inod
             partition->free_blocks_bitmap[block_address] = 1;
         }
 
-
+        // acha um bloco para o bloco indireto
         block_address = find_free_block(partition);
         partition->inodes[inode_address].indirect_block = block_address;
         partition->free_blocks_bitmap[block_address] = 1;
@@ -248,6 +250,7 @@ bool partition_create_file(Partition *partition, char *filename, INode *dir_inod
 
     partition->n_free_blocks -= n_blocks_file;
 
+    // insere arquivo no diretorio
     DirectoryEntry dir_entry;
     dir_entry_set_values(&dir_entry, filename, inode_address);
     partition_insert_dir_entry(partition, dir_inode, dir_entry);
