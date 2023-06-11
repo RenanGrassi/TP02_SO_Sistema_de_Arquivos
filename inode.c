@@ -4,11 +4,11 @@
 #include <string.h>
 
 void inode_init(INode *inode) {
-    strncpy(inode->filename, "", MAX_FILENAME_SIZE);
+    strcpy(inode->filename, "");
     inode->size = 0;
     // -1 para indicar invalido
     inode->permissions = -1;
-    inode->is_directory = -1;
+    inode->is_directory = false;
     inode->created_at = -1;
     inode->modified_at = -1;
     inode->last_accessed_at = -1;
