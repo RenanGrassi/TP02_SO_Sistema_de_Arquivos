@@ -38,5 +38,7 @@ typedef struct {
 } Partition;
 
 void partition_init(Partition *partition);
-bool partition_create_file(Partition *partition, char *filename);
+bool partition_create_file(Partition *partition, char *filename, INode *dir_node);
+bool partition_insert_dir_entry(Partition *partition, INode *dir_inode, DirectoryEntry dir_entry);
+
 #endif

@@ -30,16 +30,15 @@ int main(void) {
         DirectoryEntry dir_entry = block_read_dir_entry(block2, i);
         printf("%s, %d\n", dir_entry.filename, dir_entry.inode_address);
     }
-    // -----------------------------------------------------------------
+
 
     Partition *partition = malloc(sizeof(Partition));
     partition_init(partition);
-    partition_create_file(partition, "lorem_ipsum.txt");
-
-
-    // TODO: menu
-
+    // partition_create_file(partition, "lorem_ipsum.txt");
 
     free(partition);
+
+    // -----------------------------------------------------------------
+
     return 0;
 }

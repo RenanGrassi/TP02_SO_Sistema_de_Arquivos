@@ -19,7 +19,11 @@ typedef struct {
     time_t modified_at; // Modificado em...
     time_t last_accessed_at; // Acessado em...
     int32_t direct_blocks[N_DIRECT_BLOCKS]; // Endereços de blocos diretos
-    int32_t indirect_block; // Endereço de bloco indireto para referenciar mais blocos de dados, se necessário
+
+    /* Endereço de bloco indireto:
+        - para inodes de arquivos: usado exclusivamente como endereco para bloco indireto.
+        - para inodes de diretorio: usado como se fosse um endereco para bloco direto */
+    int32_t indirect_block;
 } INode;
 
 /*
