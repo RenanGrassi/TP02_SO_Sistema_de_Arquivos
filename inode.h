@@ -8,7 +8,7 @@
 
 #include "directory_entry.h"
 
-#define N_DIRECT_BLOCKS 10
+#define N_INODE_BLOCK_ADDRESSES 10
 
 typedef struct {
     char filename[MAX_FILENAME_SIZE]; // Nome do arquivo com tamanho fixo
@@ -18,12 +18,11 @@ typedef struct {
     time_t created_at; // Criado em...
     time_t modified_at; // Modificado em...
     time_t last_accessed_at; // Acessado em...
-    int32_t direct_blocks[N_DIRECT_BLOCKS]; // Endereços de blocos diretos
 
-    /* Endereço de bloco indireto:
+    /* o ultimo endereço de address_blocks é um endereço de bloco indireto:
         - para inodes de arquivos: usado exclusivamente como endereco para bloco indireto.
         - para inodes de diretorio: usado como se fosse um endereco para bloco direto */
-    int32_t indirect_block;
+    int32_t address_blocks[N_INODE_BLOCK_ADDRESSES]; // Endereços de blocos
 } INode;
 
 /*

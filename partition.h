@@ -9,7 +9,7 @@
 
 // tamanho maximo de arquivo suportado pelo simulador, tem esse limite pois
 // este simulador tem no maximo um bloco indireto, que é o bloco indireto do inode
-#define MAX_FILESIZE (BLOCK_SIZE * (N_DIRECT_BLOCKS + N_BLOCK_ADDRESSES))
+#define MAX_FILESIZE (BLOCK_SIZE * (N_INODE_BLOCK_ADDRESSES + N_BLOCK_ADDRESSES))
 
 /*
 intervalos definidos:
