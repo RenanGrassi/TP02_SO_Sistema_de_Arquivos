@@ -180,7 +180,7 @@ bool partition_create_file(Partition *partition, char *filename, INode *dir_inod
 
 
         // preenche os blocos indiretos
-        int remaining_blocks = n_blocks_file-1 - N_INODE_BLOCK_ADDRESSES-1;
+        int remaining_blocks = n_blocks_file - N_INODE_BLOCK_ADDRESSES;
         for (int j = 0; j < remaining_blocks; j++) {
             // se for o ultimo bloco, zera o buffer para garantir escrita correta
             if (j == remaining_blocks-1) {
