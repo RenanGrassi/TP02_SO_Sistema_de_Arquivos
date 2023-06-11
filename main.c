@@ -34,7 +34,10 @@ int main(void) {
 
     Partition *partition = malloc(sizeof(Partition));
     partition_init(partition);
-    // partition_create_file(partition, "lorem_ipsum.txt");
+    partition_create_file(partition, "lorem_ipsum.txt", &partition->inodes[0]);
+    partition_create_file(partition, "lorem_ipsum_small.txt", &partition->inodes[0]);
+    partition_read_file(partition, "/lorem_ipsum.txt");
+    partition_read_file(partition, "/lorem_ipsum_small.txt");
 
     free(partition);
 
