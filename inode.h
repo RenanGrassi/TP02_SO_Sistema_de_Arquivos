@@ -25,7 +25,7 @@ typedef struct {
             - ultimo endereço é usado exclusivamente como endereço de bloco indireto.
             - dentro desse bloco indireto, são armazenados apenas endereços de blocos diretos.
         - inode de diretorio:
-            - ultimo endereço é usado como endereço para bloco direto */
+            - ultimo endereço é usado como endereço de bloco direto */
     int32_t address_blocks[N_INODE_BLOCK_ADDRESSES]; // Endereços de blocos
 } INode;
 

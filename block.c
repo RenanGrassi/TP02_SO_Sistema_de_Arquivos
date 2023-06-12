@@ -21,7 +21,6 @@ void block_write_address(Block *block, int index, int32_t address) {
 
 DirectoryEntry block_read_dir_entry(Block block, int index) {
     DirectoryEntry dir_entry = *((DirectoryEntry*)(block.data + (index*DIR_ENTRY_SIZE)));
-
     return dir_entry;
 }
 
