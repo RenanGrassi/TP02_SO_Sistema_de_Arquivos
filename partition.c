@@ -146,12 +146,14 @@ bool partition_create_file(Partition *partition, char *filename, INode *dir_inod
 
     // se nao tiver blocos livres o suficiente ou for maior que o tamanho maximo
     if (n_blocks_file > partition->n_free_blocks || file_size > MAX_FILESIZE) {
+        printf("Erro: arquivo não cabe na partição\n");
         fclose(file);
         return false;
     }
 
     int32_t inode_address = find_free_inode(partition);
     if (inode_address == -1) {
+        printf("Erro: lista de inodes cheia, não é possível criar o arquivo\n");
         fclose(file);
         return false;
     }
