@@ -9,9 +9,9 @@
 
 typedef struct {
     char filename[MAX_FILENAME_SIZE]; // nome do arquivo
-    uint32_t inode_address; // endereco do inode
+    uint32_t inode_number; // numero do inode
 } DirectoryEntry;
 
-void dir_entry_set_values(DirectoryEntry *dir_entry, char *filename, uint32_t inode_address);
+void dir_entry_set_values(DirectoryEntry *dir_entry, char *filename, uint32_t inode_number);
 
 #endif

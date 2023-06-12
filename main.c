@@ -28,7 +28,7 @@ int main(void) {
     }
     for (int i = 0; i < 2; i++) {
         DirectoryEntry dir_entry = block_read_dir_entry(block2, i);
-        printf("%s, %d\n", dir_entry.filename, dir_entry.inode_address);
+        printf("%s, %d\n", dir_entry.filename, dir_entry.inode_number);
     }
 
 
