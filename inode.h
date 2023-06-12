@@ -19,19 +19,15 @@ typedef struct {
     time_t modified_at; // Modificado em...
     time_t last_accessed_at; // Acessado em...
 
-    /* o ultimo endereço de address_blocks é um endereço de bloco indireto:
-        - para inodes de arquivos: usado exclusivamente como endereco para bloco indireto.
-        - para inodes de diretorio: usado como se fosse um endereco para bloco direto */
+    /* address_blocks armazena endereços de blocos diretos,
+       exceto o ultimo endereço, que pode ser um endereço de bloco indireto:
+        - inode de arquivo:
+            - ultimo endereço é usado exclusivamente como endereço de bloco indireto.
+            - dentro desse bloco indireto, são armazenados apenas endereços de blocos diretos.
+        - inode de diretorio:
+            - ultimo endereço é usado como endereço para bloco direto */
     int32_t address_blocks[N_INODE_BLOCK_ADDRESSES]; // Endereços de blocos
 } INode;
-
-/*
-    O campo indirect_block permite que um i-node referencie um bloco indireto, que por sua vez contém mais referências
-    a blocos de dados. Essa abordagem indireta é usada para suportar arquivos maiores que o número máximo de blocos
-    diretamente referenciados pelos data_blocks. Faltam outras estruturas de dados, como
-    estruturas de diretório, uma tabela de i-nodes, um mapa de bits para rastrear blocos livres, além de funções
-    para manipulação de arquivos e diretórios.
-*/
 
 // Função para inicializar um Inode
 void inode_init(INode *inode);
