@@ -27,6 +27,7 @@ void partition_init(Partition *partition) {
     INode root;
     inode_init(&root);
 
+    // o primeiro bloco é sempre o root: mauricio, corrige se estiver errado :)
     strcpy(root.filename, "/");
     root.size = 0;
     root.is_directory = true;
@@ -237,10 +238,11 @@ bool partition_create_file(Partition *partition, char *filename, INode *dir_inod
     partition->inodes[inode_number].size = file_size;
     partition->inodes[inode_number].is_directory = false;
 
+    // data de criacao, ultimo acesso e modificacao
     partition->inodes[inode_number].created_at = time(NULL);
-    partition->inodes[inode_number].last_accessed_at = time(NULL); 
-    partition->inodes[inode_number].modified_at = time(NULL);
-    partition->inodes[inode_number].permissions =
+    partition->inodes[inode_number].last_accessed_at = partition->inodes[inode_number].created_at;
+    partition->inodes[inode_number].modified_at = partition->inodes[inode_number].created_at;
+    partition->inodes[inode_number].permissions = 0777;
 
     fclose(file);
     return true;
@@ -297,3 +299,191 @@ void partition_read_file(Partition *partition, char *filepath) {
     free(buffer);
 
 }
+
+//cria diretorio
+bool partition_create_dir(Partition *partition, INode *dir_inode, char *filename){
+    // verifica se ja existe um arquivo com esse nome
+    int32_t inode_number = find_filename_in_dir(partition, *dir_inode, filename);
+    if (inode_number != -1) {
+        printf("Erro: arquivo já existe\n");
+        return false;
+    }
+
+    // acha um inode livre
+    inode_number = find_free_inode(partition);
+    if (inode_number == -1) {
+        printf("Erro: não há inodes livres\n");
+        return false;
+    }
+
+    // insere arquivo no diretorio
+    DirectoryEntry dir_entry;
+    dir_entry_set_values(&dir_entry, filename, inode_number);
+    partition_insert_dir_entry(partition, dir_inode, dir_entry);
+
+    strcpy(partition->inodes[inode_number].filename, filename);
+    partition->inodes[inode_number].size = 0;
+    partition->inodes[inode_number].is_directory = true;
+
+    // data de criacao, ultimo acesso e modificacao
+    partition->inodes[inode_number].created_at = time(NULL);
+    partition->inodes[inode_number].last_accessed_at = partition->inodes[inode_number].created_at;
+    partition->inodes[inode_number].modified_at = partition->inodes[inode_number].created_at;
+    partition->inodes[inode_number].permissions = 0777;
+
+    return true;
+}
+
+//Renomear tanto arquivos quanto diretorios
+bool partition_rename(Partition *partition, INode *dir_inode, char *filename, char *new_filename){
+    if (dir_inode->is_directory == true) {
+        int32_t block_address = -1;
+        for (int i = 0; i < N_INODE_BLOCK_ADDRESSES ; i++) {
+            block_address = dir_inode->address_blocks[i];
+
+            if (block_address == -1) {
+                return false;
+            }
+
+            for (int i = 0; i < N_DIR_ENTRIES; i++) {
+                DirectoryEntry dir_entry = block_read_dir_entry(partition->data_blocks[block_address], i);
+                if (strcmp(dir_entry.filename, filename) == 0) {
+                    strcpy(dir_entry.filename, new_filename);
+                    block_write_dir_entry(partition->data_blocks[block_address], i, dir_entry);
+                    int32_t leo = dir_entry.inode_number;
+                    strcpy(partition->inodes[leo].filename, new_filename);
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+//Remove arquivos e diretorios
+bool partition_delete(Partition *partition, INode *dir_inode, char *filename){
+    if (dir_inode->is_directory == true) {
+        int32_t block_address = -1;
+        for (int i = 0; i < N_INODE_BLOCK_ADDRESSES ; i++) {
+            block_address = dir_inode->address_blocks[i];
+
+            if (block_address == -1) {
+                return false;
+            }
+
+            for (int i = 0; i < N_DIR_ENTRIES; i++) {
+                DirectoryEntry dir_entry = block_read_dir_entry(partition->data_blocks[block_address], i);
+                if (strcmp(dir_entry.filename, filename) == 0) {
+                    int32_t inode_number = dir_entry.inode_number;
+                    dir_entry.inode_number = -1;
+                    strcpy(dir_entry.filename, "");
+                    block_write_dir_entry(partition->data_blocks[block_address], i, dir_entry);
+                    strcpy(partition->inodes[inode_number].filename, "");
+                    if(partition->inodes[inode_number].is_directory == true){
+                        // TODO
+                    } else {
+                        // blocos diretos
+                        for (size_t i = 0; i < N_INODE_BLOCK_ADDRESSES - 1; i++){
+                            block_address = partition->inodes[inode_number].address_blocks[i];
+                            if (block_address != -1)
+                            {
+                                partition->free_blocks_bitmap[block_address] = 0;
+                                partition->n_free_blocks++;
+                                partition->inodes[inode_number].address_blocks[i] = -1;
+                            }
+                            
+                            
+                        }
+                        int32_t indirect_block_address = partition->inodes[inode_number].address_blocks[N_INODE_BLOCK_ADDRESSES - 1];
+                        if (indirect_block_address != -1) {
+                            // preenche o bloco indireto com -1
+                            for (size_t i = 0; i < N_BLOCK_ADDRESSES; i++)
+                            {
+                                block_address = block_read_address(partition->data_blocks[indirect_block_address], i);
+                                
+                                if (block_address != -1)
+                                {
+                                    partition->free_blocks_bitmap[block_address] = 0;
+                                    partition->n_free_blocks++;
+                                    block_write_address(&partition->data_blocks[indirect_block_address], i, -1);
+                                }
+                                
+                            }
+                            partition->inodes[inode_number].address_blocks[N_INODE_BLOCK_ADDRESSES - 1] = -1;
+                            partition->free_blocks_bitmap[indirect_block_address] = 0;
+                            partition->n_free_blocks++;
+                        }
+                        partition->inodes[inode_number].size = 0;
+                        partition->inodes[inode_number].permissions = -1;
+                        partition->inodes[inode_number].is_directory = false;
+                        partition->inodes[inode_number].created_at = -1;
+                        partition->inodes[inode_number].modified_at = -1;
+                        partition->inodes[inode_number].last_accessed_at = -1;
+                    }
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+//listar conteúdo do diretório
+void partition_list(Partition *partition, INode *dir_inode){    
+    if (dir_inode->is_directory == true) {
+        int32_t block_address = -1;
+        for (int i = 0; i < N_INODE_BLOCK_ADDRESSES ; i++) {
+            block_address = dir_inode->address_blocks[i];
+
+            if (block_address == -1) {
+                break;
+            }
+            for (int i = 0; i < N_DIR_ENTRIES; i++) {
+                DirectoryEntry dir_entry = block_read_dir_entry(partition->data_blocks[block_address], i);
+                if (strcmp(dir_entry.filename, "") != 0) {
+                    int32_t inode_number = dir_entry.inode_number;
+                    printf("Inode %d/%d", inode_number, N_INODES);
+                    printf("");
+                    INode inode = partition->inodes[inode_number];
+                    if(dir_inode->is_directory == true){
+                        printf("Diretório: %s\n", dir_entry.filename);
+                    } else {
+                        printf("Arquivo: %s\n", dir_entry.filename);
+                    }
+                    printf("Tamanho: %d\n", inode.size);
+                    printf("Permissões: %d\n", inode.permissions);
+                    printf("Criado em: %s", ctime(&inode.created_at));
+                    printf("Modificado em: %s", ctime(&inode.modified_at));
+                    printf("Acessado em: %s", ctime(&inode.last_accessed_at));
+                    print("");
+                    printf("######################################################");
+                }
+            }
+        }
+    }
+}
+
+//mover arquivo ou diretório
+bool partition_move(Partition *partition, INode *dir_inode, char *filename){
+    if (dir_inode->is_directory == true) {
+        int32_t block_address = -1;
+        for (int i = 0; i < N_INODE_BLOCK_ADDRESSES ; i++) {
+            block_address = dir_inode->address_blocks[i];
+
+            if (block_address == -1) {
+                return false;
+            }
+
+            for (int i = 0; i < N_DIR_ENTRIES; i++) {
+                DirectoryEntry dir_entry = block_read_dir_entry(partition->data_blocks[block_address], i);
+                if (strcmp(dir_entry.filename, filename) == 0) {
+                    return dir_entry.inode_number;
+                }
+            }
+
+        }
+    }
+    return -1;
+}  
