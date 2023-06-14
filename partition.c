@@ -30,12 +30,10 @@ void partition_init(Partition *partition) {
     strcpy(root.filename, "/");
     root.size = 0;
     root.is_directory = true;
-
-    // TODO
-    // root.created_at =
-    // root.last_accessed_at =
-    // root.modified_at =
-    // root.permissions =
+    root.created_at = time(NULL);
+    root.last_accessed_at = root.created_at;
+    root.modified_at =  root.created_at; 
+    root.permissions = 0777; // 777 em octal
 
     // o primeiro inode é sempre o root
     partition->inodes[0] = root;
@@ -239,11 +237,10 @@ bool partition_create_file(Partition *partition, char *filename, INode *dir_inod
     partition->inodes[inode_number].size = file_size;
     partition->inodes[inode_number].is_directory = false;
 
-    // TODO
-    // partition->inodes[inode_number].created_at =
-    // partition->inodes[inode_number].last_accessed_at =
-    // partition->inodes[inode_number].modified_at =
-    // partition->inodes[inode_number].permissions =
+    partition->inodes[inode_number].created_at = time(NULL);
+    partition->inodes[inode_number].last_accessed_at = time(NULL); 
+    partition->inodes[inode_number].modified_at = time(NULL);
+    partition->inodes[inode_number].permissions =
 
     fclose(file);
     return true;
