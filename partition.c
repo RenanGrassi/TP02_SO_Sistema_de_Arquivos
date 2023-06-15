@@ -65,7 +65,7 @@ static int32_t find_free_inode(Partition *partition) {
 static int32_t find_filename_in_dir(Partition *partition, INode dir_inode, char *filename) {
     if (dir_inode.is_directory == true) {
         int32_t block_address = -1;
-        for (int i = 0; i < N_INODE_BLOCK_ADDRESSES ; i++) {
+        for (int i = 0; i < N_INODE_ADDRESS_BLOCKS ; i++) {
             block_address = dir_inode.address_blocks[i];
 
             if (block_address == -1) {
@@ -85,6 +85,25 @@ static int32_t find_filename_in_dir(Partition *partition, INode dir_inode, char 
     return -1;
 }
 
+// procura o numero do inode pelo filepath
+static int32_t find_inode_by_filepath(Partition *partition, char *filepath) {
+    // comeca pelo root(o primeiro inode é o root)
+    INode inode = partition->inodes[0];
+    int32_t inode_number = -1;
+    char* token = strtok(filepath, "/");
+    while (inode.is_directory) {
+        inode_number = find_filename_in_dir(partition, inode, token);
+        if (inode_number == -1) {
+            printf("Erro: arquivo não encontrado\n");
+            return -1;
+        }
+
+        inode = partition->inodes[inode_number];
+        token = strtok(NULL, "/");
+    }
+    return inode_number;
+}
+
 // insere uma entrada de diretorio em um inode de diretorio
 bool partition_insert_dir_entry(Partition *partition, INode *dir_inode, DirectoryEntry dir_entry) {
     if (!dir_inode->is_directory) {
@@ -93,7 +112,7 @@ bool partition_insert_dir_entry(Partition *partition, INode *dir_inode, Director
 
 
     // procura um bloco
-    for (int i = 0; i < N_INODE_BLOCK_ADDRESSES; i++) {
+    for (int i = 0; i < N_INODE_ADDRESS_BLOCKS; i++) {
         int32_t block_address = -1;
         block_address = dir_inode->address_blocks[i];
         if (block_address == -1) {
@@ -139,7 +158,7 @@ bool partition_create_file(Partition *partition, char *filename, INode *dir_inod
 
     // se o arquivo nao couber nos enderecos diretos do inode, entao precisa de um bloco a mais
     // para armazenar os outros enderecos
-    if (n_blocks_file > N_INODE_BLOCK_ADDRESSES-1) {
+    if (n_blocks_file > N_INODE_ADDRESS_BLOCKS-1) {
         n_blocks_file++;
     }
 
@@ -158,12 +177,12 @@ bool partition_create_file(Partition *partition, char *filename, INode *dir_inod
     }
 
     // se nao couber nos blocos diretos
-    if (n_blocks_file > N_INODE_BLOCK_ADDRESSES-1) {
+    if (n_blocks_file > N_INODE_ADDRESS_BLOCKS-1) {
         char buffer[BLOCK_SIZE];
         uint32_t block_address = -1;
 
         // preenche os blocos diretos
-        for (int j = 0; j < N_INODE_BLOCK_ADDRESSES-1; j++) {
+        for (int j = 0; j < N_INODE_ADDRESS_BLOCKS-1; j++) {
             fread(buffer, 1, BLOCK_SIZE, file);
 
             block_address = find_free_block(partition);
@@ -176,12 +195,12 @@ bool partition_create_file(Partition *partition, char *filename, INode *dir_inod
 
         // acha um bloco para o bloco indireto
         block_address = find_free_block(partition);
-        partition->inodes[inode_number].address_blocks[N_INODE_BLOCK_ADDRESSES-1] = block_address;
+        partition->inodes[inode_number].address_blocks[N_INODE_ADDRESS_BLOCKS-1] = block_address;
         partition->free_blocks_bitmap[block_address] = 1;
 
 
         // preenche os blocos indiretos
-        int remaining_blocks = n_blocks_file - N_INODE_BLOCK_ADDRESSES;
+        int remaining_blocks = n_blocks_file - N_INODE_ADDRESS_BLOCKS;
         for (int j = 0; j < remaining_blocks; j++) {
             // se for o ultimo bloco, zera o buffer para garantir escrita correta
             if (j == remaining_blocks-1) {
@@ -196,12 +215,12 @@ bool partition_create_file(Partition *partition, char *filename, INode *dir_inod
             memcpy(partition->data_blocks[block_address].data, buffer, BLOCK_SIZE);
 
             // escreve o endereco no bloco indireto
-            block_write_address(&partition->data_blocks[partition->inodes[inode_number].address_blocks[N_INODE_BLOCK_ADDRESSES-1]], j, block_address);
+            block_write_address(&partition->data_blocks[partition->inodes[inode_number].address_blocks[N_INODE_ADDRESS_BLOCKS-1]], j, block_address);
         }
 
         // preenche o resto com -1
         for (int j = remaining_blocks; j < N_BLOCK_ADDRESSES; j++) {
-            block_write_address(&partition->data_blocks[partition->inodes[inode_number].address_blocks[N_INODE_BLOCK_ADDRESSES-1]], j, -1);
+            block_write_address(&partition->data_blocks[partition->inodes[inode_number].address_blocks[N_INODE_ADDRESS_BLOCKS-1]], j, -1);
         }
 
     }
@@ -250,25 +269,17 @@ bool partition_create_file(Partition *partition, char *filename, INode *dir_inod
 
 // le arquivo e printa
 void partition_read_file(Partition *partition, char *filepath) {
-    // comeca pelo root(o primeiro inode é o root)
-    INode inode = partition->inodes[0];
-
-    char* token = strtok(filepath, "/");
-    while (inode.is_directory) {
-        int32_t inode_number = find_filename_in_dir(partition, inode, token);
-        if (inode_number == -1) {
-            printf("Erro: arquivo não encontrado\n");
-            return;
-        }
-
-        inode = partition->inodes[inode_number];
-        token = strtok(NULL, "/");
+    int32_t inode_number = find_inode_by_filepath(partition, filepath);
+    if (inode_number == -1) {
+        printf("Erro: arquivo não encontrado\n");
+        return;
     }
+    INode inode = partition->inodes[inode_number];
 
     int32_t block_address = -1;
     char *buffer = malloc(BLOCK_SIZE+1);
     // blocos diretos
-    for (int i = 0; i < N_INODE_BLOCK_ADDRESSES-1; i++) {
+    for (int i = 0; i < N_INODE_ADDRESS_BLOCKS-1; i++) {
         block_address = inode.address_blocks[i];
         if (block_address == -1) {
             printf("\n");
@@ -283,7 +294,7 @@ void partition_read_file(Partition *partition, char *filepath) {
 
     // bloco indireto
     for (int i = 0; i < N_BLOCK_ADDRESSES; i++) {
-        block_address = block_read_address(partition->data_blocks[inode.address_blocks[N_INODE_BLOCK_ADDRESSES-1]], i);
+        block_address = block_read_address(partition->data_blocks[inode.address_blocks[N_INODE_ADDRESS_BLOCKS-1]], i);
         if (block_address == -1) {
             printf("\n");
             free(buffer);
@@ -338,7 +349,7 @@ bool partition_create_dir(Partition *partition, INode *dir_inode, char *filename
 bool partition_rename(Partition *partition, INode *dir_inode, char *filename, char *new_filename){
     if (dir_inode->is_directory == true) {
         int32_t block_address = -1;
-        for (int i = 0; i < N_INODE_BLOCK_ADDRESSES ; i++) {
+        for (int i = 0; i < N_INODE_ADDRESS_BLOCKS ; i++) {
             block_address = dir_inode->address_blocks[i];
 
             if (block_address == -1) {
@@ -365,7 +376,7 @@ bool partition_rename(Partition *partition, INode *dir_inode, char *filename, ch
 bool partition_delete(Partition *partition, INode *dir_inode, char *filename){
     if (dir_inode->is_directory == true) {
         int32_t block_address = -1;
-        for (int i = 0; i < N_INODE_BLOCK_ADDRESSES ; i++) {
+        for (int i = 0; i < N_INODE_ADDRESS_BLOCKS ; i++) {
             block_address = dir_inode->address_blocks[i];
 
             if (block_address == -1) {
@@ -384,7 +395,7 @@ bool partition_delete(Partition *partition, INode *dir_inode, char *filename){
                         // TODO
                     } else {
                         // blocos diretos
-                        for (size_t i = 0; i < N_INODE_BLOCK_ADDRESSES - 1; i++){
+                        for (size_t i = 0; i < N_INODE_ADDRESS_BLOCKS - 1; i++){
                             block_address = partition->inodes[inode_number].address_blocks[i];
                             if (block_address != -1)
                             {
@@ -395,7 +406,7 @@ bool partition_delete(Partition *partition, INode *dir_inode, char *filename){
 
 
                         }
-                        int32_t indirect_block_address = partition->inodes[inode_number].address_blocks[N_INODE_BLOCK_ADDRESSES - 1];
+                        int32_t indirect_block_address = partition->inodes[inode_number].address_blocks[N_INODE_ADDRESS_BLOCKS - 1];
                         if (indirect_block_address != -1) {
                             // preenche o bloco indireto com -1
                             for (size_t i = 0; i < N_BLOCK_ADDRESSES; i++)
@@ -410,7 +421,7 @@ bool partition_delete(Partition *partition, INode *dir_inode, char *filename){
                                 }
 
                             }
-                            partition->inodes[inode_number].address_blocks[N_INODE_BLOCK_ADDRESSES - 1] = -1;
+                            partition->inodes[inode_number].address_blocks[N_INODE_ADDRESS_BLOCKS - 1] = -1;
                             partition->free_blocks_bitmap[indirect_block_address] = 0;
                             partition->n_free_blocks++;
                         }
@@ -434,7 +445,7 @@ bool partition_delete(Partition *partition, INode *dir_inode, char *filename){
 void partition_list(Partition *partition, INode *dir_inode){
     if (dir_inode->is_directory == true) {
         int32_t block_address = -1;
-        for (int i = 0; i < N_INODE_BLOCK_ADDRESSES ; i++) {
+        for (int i = 0; i < N_INODE_ADDRESS_BLOCKS ; i++) {
             block_address = dir_inode->address_blocks[i];
 
             if (block_address == -1) {
@@ -469,7 +480,7 @@ void partition_list(Partition *partition, INode *dir_inode){
 bool partition_move(Partition *partition, INode *dir_inode, char *filename){
     if (dir_inode->is_directory == true) {
         int32_t block_address = -1;
-        for (int i = 0; i < N_INODE_BLOCK_ADDRESSES ; i++) {
+        for (int i = 0; i < N_INODE_ADDRESS_BLOCKS ; i++) {
             block_address = dir_inode->address_blocks[i];
 
             if (block_address == -1) {

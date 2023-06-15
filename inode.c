@@ -12,7 +12,7 @@ void inode_init(INode *inode) {
     inode->created_at = -1;
     inode->modified_at = -1;
     inode->last_accessed_at = -1;
-    for (int i = 0; i < N_INODE_BLOCK_ADDRESSES; i++) {
+    for (int i = 0; i < N_INODE_ADDRESS_BLOCKS; i++) {
         inode->address_blocks[i] = -1;
     }
 }
