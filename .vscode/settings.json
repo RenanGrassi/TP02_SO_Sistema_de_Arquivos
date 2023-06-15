@@ -1,5 +1,19 @@
 {
-    "files.associations": {
-        "stdint.h": "c"
-    }
+  "files.associations": {
+    "stdint.h": "c"
+  },
+  "C_Cpp.default.compilerArgs": [
+    "-DBLOCK_SIZE_KB=4",
+    "-DPARTITION_SIZE_MB=100",
+    "-DBLOCK_SIZE=4096",
+    "-DPARTITION_SIZE=104857600",
+    "-DN_BLOCKS=25600",
+    "-DN_INODES=1280",
+    "-DN_DATA_BLOCKS=24320",
+    "-DBLOCK_ADDRESS_SIZE=4",
+    "-DN_BLOCK_ADDRESSES=1024",
+    "-Wall",
+    "-Wextra",
+    "-pedantic"
+  ]
 }

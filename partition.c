@@ -33,7 +33,7 @@ void partition_init(Partition *partition) {
     root.is_directory = true;
     root.created_at = time(NULL);
     root.last_accessed_at = root.created_at;
-    root.modified_at =  root.created_at; 
+    root.modified_at =  root.created_at;
     root.permissions = 0777; // 777 em octal
 
     // o primeiro inode é sempre o root
@@ -349,7 +349,7 @@ bool partition_rename(Partition *partition, INode *dir_inode, char *filename, ch
                 DirectoryEntry dir_entry = block_read_dir_entry(partition->data_blocks[block_address], i);
                 if (strcmp(dir_entry.filename, filename) == 0) {
                     strcpy(dir_entry.filename, new_filename);
-                    block_write_dir_entry(partition->data_blocks[block_address], i, dir_entry);
+                    block_write_dir_entry(&partition->data_blocks[block_address], i, dir_entry);
                     int32_t leo = dir_entry.inode_number;
                     strcpy(partition->inodes[leo].filename, new_filename);
                     return true;
@@ -378,7 +378,7 @@ bool partition_delete(Partition *partition, INode *dir_inode, char *filename){
                     int32_t inode_number = dir_entry.inode_number;
                     dir_entry.inode_number = -1;
                     strcpy(dir_entry.filename, "");
-                    block_write_dir_entry(partition->data_blocks[block_address], i, dir_entry);
+                    block_write_dir_entry(&partition->data_blocks[block_address], i, dir_entry);
                     strcpy(partition->inodes[inode_number].filename, "");
                     if(partition->inodes[inode_number].is_directory == true){
                         // TODO
@@ -392,8 +392,8 @@ bool partition_delete(Partition *partition, INode *dir_inode, char *filename){
                                 partition->n_free_blocks++;
                                 partition->inodes[inode_number].address_blocks[i] = -1;
                             }
-                            
-                            
+
+
                         }
                         int32_t indirect_block_address = partition->inodes[inode_number].address_blocks[N_INODE_BLOCK_ADDRESSES - 1];
                         if (indirect_block_address != -1) {
@@ -401,14 +401,14 @@ bool partition_delete(Partition *partition, INode *dir_inode, char *filename){
                             for (size_t i = 0; i < N_BLOCK_ADDRESSES; i++)
                             {
                                 block_address = block_read_address(partition->data_blocks[indirect_block_address], i);
-                                
+
                                 if (block_address != -1)
                                 {
                                     partition->free_blocks_bitmap[block_address] = 0;
                                     partition->n_free_blocks++;
                                     block_write_address(&partition->data_blocks[indirect_block_address], i, -1);
                                 }
-                                
+
                             }
                             partition->inodes[inode_number].address_blocks[N_INODE_BLOCK_ADDRESSES - 1] = -1;
                             partition->free_blocks_bitmap[indirect_block_address] = 0;
@@ -431,7 +431,7 @@ bool partition_delete(Partition *partition, INode *dir_inode, char *filename){
 }
 
 //listar conteúdo do diretório
-void partition_list(Partition *partition, INode *dir_inode){    
+void partition_list(Partition *partition, INode *dir_inode){
     if (dir_inode->is_directory == true) {
         int32_t block_address = -1;
         for (int i = 0; i < N_INODE_BLOCK_ADDRESSES ; i++) {
@@ -457,7 +457,7 @@ void partition_list(Partition *partition, INode *dir_inode){
                     printf("Criado em: %s", ctime(&inode.created_at));
                     printf("Modificado em: %s", ctime(&inode.modified_at));
                     printf("Acessado em: %s", ctime(&inode.last_accessed_at));
-                    print("");
+                    printf("");
                     printf("######################################################");
                 }
             }
@@ -486,4 +486,4 @@ bool partition_move(Partition *partition, INode *dir_inode, char *filename){
         }
     }
     return -1;
-}  
+}
