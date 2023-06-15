@@ -389,7 +389,7 @@ bool partition_rename(Partition *partition, char *dir_path, char *filename, char
     return false;
 }
 
-//Remove arquivos e diretorios
+//Remove arquivos e diretorios(só remove diretorios vazios para simplificar)
 bool partition_delete(Partition *partition, char *dir_path, char *filename){
     // acha o inode do diretorio pelo dir_path
     int32_t inode_number = find_inode_by_filepath(partition, dir_path);

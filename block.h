@@ -9,9 +9,10 @@
 macros uteis:
     BLOCK_SIZE: tamanho de um bloco em bytes
     BLOCK_ADDRESS_SIZE: tamanho de um bloco
-    N_BLOCK_ADDRESSES: numero de enderecos que cabem em um bloco
 */
 
+#define N_BLOCK_ADDRESSES (BLOCK_SIZE / BLOCK_ADDRESS_SIZE) // numero de enderecos de bloco que cabem em um bloco
+#define N_DIR_ENTRIES (BLOCK_SIZE / DIR_ENTRY_SIZE) // numero de entradas de diretorio que cabem em um bloco
 
 typedef struct {
     // char é 1 byte, logo um vetor de char com tamanho de um bloco vai ocupar exatamente um bloco
