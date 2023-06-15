@@ -94,7 +94,6 @@ static int32_t find_inode_by_filepath(Partition *partition, char *filepath) {
     while (token != NULL) {
         inode_number = find_filename_in_dir(partition, inode, token);
         if (inode_number == -1) {
-            printf("Erro: arquivo não encontrado\n");
             return -1;
         }
 
@@ -273,7 +272,19 @@ bool partition_create_file(Partition *partition, char *dir_path, char *filename)
 }
 
 // le arquivo e printa
-void partition_read_file(Partition *partition, char *filepath) {
+void partition_read_file(Partition *partition, char *dir_path, char *filename) {
+    char filepath[MAX_FILENAME_SIZE];
+    if (strcmp(dir_path, "/") == 0) {
+        strcpy(filepath, dir_path);
+        strcat(filepath, filename);
+    } else {
+        char slash[2];
+        strcpy(slash, "/");
+        strcpy(filepath, dir_path);
+        strcat(filepath, slash);
+        strcat(filepath, filename);
+    }
+
     int32_t inode_number = find_inode_by_filepath(partition, filepath);
     if (inode_number == -1) {
         printf("Erro: arquivo não encontrado\n");
@@ -404,6 +415,7 @@ bool partition_delete(Partition *partition, char *dir_path, char *filename){
             block_address = dir_inode->block_addresses[i];
 
             if (block_address == -1) {
+                printf("Erro: arquivo não encontrado\n");
                 return false;
             }
 
@@ -488,7 +500,7 @@ bool partition_delete(Partition *partition, char *dir_path, char *filename){
             }
         }
     }
-
+    printf("Erro: arquivo não encontrado\n");
     return false;
 }
 

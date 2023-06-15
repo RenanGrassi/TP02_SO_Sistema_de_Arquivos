@@ -40,19 +40,18 @@ int main(void) {
     partition_create_dir(partition, dir_path, "dir1");
     strcpy(dir_path, "/dir1");
     partition_create_dir(partition, dir_path, "dir2");
+    // strcpy(dir_path, "/dir1");
+    // partition_delete(partition, dir_path, "dir2");
+    // strcpy(dir_path, "/");
+    // partition_delete(partition, dir_path, "dir1");
     strcpy(dir_path, "/dir1");
     partition_create_file(partition, dir_path, "lorem_ipsum.txt");
     strcpy(dir_path, "/dir1/dir2");
     partition_create_file(partition, dir_path, "lorem_ipsum_small.txt");
-    strcpy(dir_path, "/dir1/lorem_ipsum.txt");
-    partition_read_file(partition, dir_path);
-    strcpy(dir_path, "/dir1/dir2/lorem_ipsum_small.txt");
-    partition_read_file(partition, dir_path);
-    // strcpy(dir_path, "/");
-    // partition_list(partition, dir_path);
+    partition_read_file(partition, dir_path, "lorem_ipsum.txt");
     strcpy(dir_path, "/dir1/dir2");
+    partition_read_file(partition, dir_path, "lorem_ipsum_small.txt");
     partition_list(partition, dir_path);
-
     free(partition);
 
     // -----------------------------------------------------------------

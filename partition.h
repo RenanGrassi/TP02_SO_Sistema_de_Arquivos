@@ -39,7 +39,7 @@ typedef struct {
 
 void partition_init(Partition *partition);
 bool partition_create_file(Partition *partition, char *dir_path, char *filename);
-void partition_read_file(Partition *partition, char *filepath);
+void partition_read_file(Partition *partition, char *dir_path, char *filepath);
 bool partition_create_dir(Partition *partition, char *dir_path, char *filename);
 bool partition_rename(Partition *partition, char *dir_path, char *filename, char *new_filename);
 bool partition_delete(Partition *partition, char *dir_path, char *filename);
