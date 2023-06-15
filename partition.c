@@ -90,7 +90,8 @@ static int32_t find_inode_by_filepath(Partition *partition, char *filepath) {
     // comeca procurando no root(o primeiro inode é o root)
     int32_t inode_number = 0;
     INode inode = partition->inodes[inode_number];
-    char* token = strtok(filepath, "/");
+    char *copy = strdup(filepath);
+    char *token = strtok(copy, "/");
     while (token != NULL) {
         inode_number = find_filename_in_dir(partition, inode, token);
         if (inode_number == -1) {
@@ -100,6 +101,7 @@ static int32_t find_inode_by_filepath(Partition *partition, char *filepath) {
         inode = partition->inodes[inode_number];
         token = strtok(NULL, "/");
     }
+    free(copy);
     return inode_number;
 }
 
