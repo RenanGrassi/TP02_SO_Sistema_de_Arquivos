@@ -87,11 +87,11 @@ static int32_t find_filename_in_dir(Partition *partition, INode dir_inode, char 
 
 // procura o numero do inode pelo filepath
 static int32_t find_inode_by_filepath(Partition *partition, char *filepath) {
-    // comeca pelo root(o primeiro inode é o root)
-    INode inode = partition->inodes[0];
-    int32_t inode_number = -1;
+    // comeca procurando no root(o primeiro inode é o root)
+    int32_t inode_number = 0;
+    INode inode = partition->inodes[inode_number];
     char* token = strtok(filepath, "/");
-    while (inode.is_directory) {
+    while (token != NULL) {
         inode_number = find_filename_in_dir(partition, inode, token);
         if (inode_number == -1) {
             printf("Erro: arquivo não encontrado\n");
@@ -105,11 +105,10 @@ static int32_t find_inode_by_filepath(Partition *partition, char *filepath) {
 }
 
 // insere uma entrada de diretorio em um inode de diretorio
-bool partition_insert_dir_entry(Partition *partition, INode *dir_inode, DirectoryEntry dir_entry) {
+static bool insert_dir_entry(Partition *partition, INode *dir_inode, DirectoryEntry dir_entry) {
     if (!dir_inode->is_directory) {
         return false;
     }
-
 
     // procura um bloco
     for (int i = 0; i < N_INODE_ADDRESS_BLOCKS; i++) {
@@ -141,7 +140,13 @@ bool partition_insert_dir_entry(Partition *partition, INode *dir_inode, Director
 
 // cria arquivo de a partir de um arquivo real do sistema de arquivos real da maquina
 // retorna true se criou o arquivo com sucesso, falso caso contrario
-bool partition_create_file(Partition *partition, char *filename, INode *dir_inode) {
+bool partition_create_file(Partition *partition, char *dir_path, char *filename) {
+    int32_t inode_number = find_inode_by_filepath(partition, dir_path);
+    if (inode_number == -1) {
+        printf("Erro: diretorio não encontrado\n");
+        return false;
+    }
+    INode *dir_inode = &partition->inodes[inode_number];
     FILE *file = fopen(filename, "r");
     if (!file) {
         perror("error");
@@ -169,7 +174,7 @@ bool partition_create_file(Partition *partition, char *filename, INode *dir_inod
         return false;
     }
 
-    int32_t inode_number = find_free_inode(partition);
+    inode_number = find_free_inode(partition);
     if (inode_number == -1) {
         printf("Erro: lista de inodes cheia, não é possível criar o arquivo\n");
         fclose(file);
@@ -251,7 +256,7 @@ bool partition_create_file(Partition *partition, char *filename, INode *dir_inod
     // insere arquivo no diretorio
     DirectoryEntry dir_entry;
     dir_entry_set_values(&dir_entry, filename, inode_number);
-    partition_insert_dir_entry(partition, dir_inode, dir_entry);
+    insert_dir_entry(partition, dir_inode, dir_entry);
 
     strcpy(partition->inodes[inode_number].filename, filename);
     partition->inodes[inode_number].size = file_size;
@@ -312,9 +317,17 @@ void partition_read_file(Partition *partition, char *filepath) {
 }
 
 //cria diretorio
-bool partition_create_dir(Partition *partition, INode *dir_inode, char *filename){
+bool partition_create_dir(Partition *partition, char *dir_path, char *filename) {
+    // acha o inode do diretorio pelo dir_path
+    int32_t inode_number = find_inode_by_filepath(partition, dir_path);
+    if (inode_number == -1) {
+        printf("Erro: diretório não encontrado\n");
+        return false;
+    }
+    INode *dir_inode = &partition->inodes[inode_number];
+
     // verifica se ja existe um arquivo com esse nome
-    int32_t inode_number = find_filename_in_dir(partition, *dir_inode, filename);
+    inode_number = find_filename_in_dir(partition, *dir_inode, filename);
     if (inode_number != -1) {
         printf("Erro: arquivo já existe\n");
         return false;
@@ -330,7 +343,7 @@ bool partition_create_dir(Partition *partition, INode *dir_inode, char *filename
     // insere arquivo no diretorio
     DirectoryEntry dir_entry;
     dir_entry_set_values(&dir_entry, filename, inode_number);
-    partition_insert_dir_entry(partition, dir_inode, dir_entry);
+    insert_dir_entry(partition, dir_inode, dir_entry);
 
     strcpy(partition->inodes[inode_number].filename, filename);
     partition->inodes[inode_number].size = 0;
@@ -346,25 +359,29 @@ bool partition_create_dir(Partition *partition, INode *dir_inode, char *filename
 }
 
 //Renomear tanto arquivos quanto diretorios
-bool partition_rename(Partition *partition, INode *dir_inode, char *filename, char *new_filename){
-    if (dir_inode->is_directory == true) {
-        int32_t block_address = -1;
-        for (int i = 0; i < N_INODE_ADDRESS_BLOCKS ; i++) {
-            block_address = dir_inode->address_blocks[i];
+bool partition_rename(Partition *partition, char *dir_path, char *filename, char *new_filename){
+    // acha o inode do diretorio pelo dir_path
+    int32_t inode_number = find_inode_by_filepath(partition, dir_path);
+    if (inode_number == -1) {
+        printf("Erro: diretório não encontrado\n");
+        return false;
+    }
+    INode dir_inode = partition->inodes[inode_number];
+    int32_t block_address = -1;
+    for (int i = 0; i < N_INODE_ADDRESS_BLOCKS ; i++) {
+        block_address = dir_inode.address_blocks[i];
 
-            if (block_address == -1) {
-                return false;
-            }
+        if (block_address == -1) {
+            return false;
+        }
 
-            for (int i = 0; i < N_DIR_ENTRIES; i++) {
-                DirectoryEntry dir_entry = block_read_dir_entry(partition->data_blocks[block_address], i);
-                if (strcmp(dir_entry.filename, filename) == 0) {
-                    strcpy(dir_entry.filename, new_filename);
-                    block_write_dir_entry(&partition->data_blocks[block_address], i, dir_entry);
-                    int32_t leo = dir_entry.inode_number;
-                    strcpy(partition->inodes[leo].filename, new_filename);
-                    return true;
-                }
+        for (int i = 0; i < N_DIR_ENTRIES; i++) {
+            DirectoryEntry dir_entry = block_read_dir_entry(partition->data_blocks[block_address], i);
+            if (strcmp(dir_entry.filename, filename) == 0) {
+                strcpy(dir_entry.filename, new_filename);
+                block_write_dir_entry(&partition->data_blocks[block_address], i, dir_entry);
+                strcpy(partition->inodes[dir_entry.inode_number].filename, new_filename);
+                return true;
             }
         }
     }
@@ -373,7 +390,14 @@ bool partition_rename(Partition *partition, INode *dir_inode, char *filename, ch
 }
 
 //Remove arquivos e diretorios
-bool partition_delete(Partition *partition, INode *dir_inode, char *filename){
+bool partition_delete(Partition *partition, char *dir_path, char *filename){
+    // acha o inode do diretorio pelo dir_path
+    int32_t inode_number = find_inode_by_filepath(partition, dir_path);
+    if (inode_number == -1) {
+        printf("Erro: diretório não encontrado\n");
+        return false;
+    }
+    INode *dir_inode = &partition->inodes[inode_number];
     if (dir_inode->is_directory == true) {
         int32_t block_address = -1;
         for (int i = 0; i < N_INODE_ADDRESS_BLOCKS ; i++) {
@@ -442,7 +466,15 @@ bool partition_delete(Partition *partition, INode *dir_inode, char *filename){
 }
 
 //listar conteúdo do diretório
-void partition_list(Partition *partition, INode *dir_inode){
+void partition_list(Partition *partition, char *dir_path){
+    // acha o inode do diretorio pelo dir_path
+    int32_t inode_number = find_inode_by_filepath(partition, dir_path);
+    if (inode_number == -1) {
+        printf("Erro: diretório não encontrado\n");
+        return;
+    }
+    INode *dir_inode = &partition->inodes[inode_number];
+
     if (dir_inode->is_directory == true) {
         int32_t block_address = -1;
         for (int i = 0; i < N_INODE_ADDRESS_BLOCKS ; i++) {
@@ -455,10 +487,9 @@ void partition_list(Partition *partition, INode *dir_inode){
                 DirectoryEntry dir_entry = block_read_dir_entry(partition->data_blocks[block_address], i);
                 if (strcmp(dir_entry.filename, "") != 0) {
                     int32_t inode_number = dir_entry.inode_number;
-                    printf("Inode %d/%d", inode_number, N_INODES);
-                    printf("");
+                    printf("Inode %d/%d\n", inode_number, N_INODES);
                     INode inode = partition->inodes[inode_number];
-                    if(dir_inode->is_directory == true){
+                    if(inode.is_directory == true){
                         printf("Diretório: %s\n", dir_entry.filename);
                     } else {
                         printf("Arquivo: %s\n", dir_entry.filename);
@@ -468,8 +499,7 @@ void partition_list(Partition *partition, INode *dir_inode){
                     printf("Criado em: %s", ctime(&inode.created_at));
                     printf("Modificado em: %s", ctime(&inode.modified_at));
                     printf("Acessado em: %s", ctime(&inode.last_accessed_at));
-                    printf("");
-                    printf("######################################################");
+                    printf("######################################################\n");
                 }
             }
         }
@@ -477,7 +507,15 @@ void partition_list(Partition *partition, INode *dir_inode){
 }
 
 //mover arquivo ou diretório
-bool partition_move(Partition *partition, INode *dir_inode, char *filename){
+bool partition_move(Partition *partition, char *dir_path, char *filename){
+    // acha o inode do diretorio pelo dir_path
+    int32_t inode_number = find_inode_by_filepath(partition, dir_path);
+    if (inode_number == -1) {
+        printf("Erro: diretório não encontrado\n");
+        return false;
+    }
+    INode *dir_inode = &partition->inodes[inode_number];
+
     if (dir_inode->is_directory == true) {
         int32_t block_address = -1;
         for (int i = 0; i < N_INODE_ADDRESS_BLOCKS ; i++) {
