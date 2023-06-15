@@ -507,7 +507,7 @@ void partition_list(Partition *partition, char *dir_path){
 }
 
 //mover arquivo ou diretório
-bool partition_move(Partition *partition, char *dir_path, char *filename){
+bool partition_move(Partition *partition, char *dir_path, char* new_dir_path, char *filename){
     // acha o inode do diretorio pelo dir_path
     int32_t inode_number = find_inode_by_filepath(partition, dir_path);
     if (inode_number == -1) {
@@ -515,6 +515,13 @@ bool partition_move(Partition *partition, char *dir_path, char *filename){
         return false;
     }
     INode *dir_inode = &partition->inodes[inode_number];
+
+    inode_number = find_inode_by_filepath(partition, new_dir_path);
+    if (inode_number == -1) {
+        printf("Erro: diretório não encontrado\n");
+        return false;
+    }
+    INode *new_dir_inode = &partition->inodes[inode_number];
 
     if (dir_inode->is_directory == true) {
         int32_t block_address = -1;
@@ -528,11 +535,18 @@ bool partition_move(Partition *partition, char *dir_path, char *filename){
             for (int i = 0; i < N_DIR_ENTRIES; i++) {
                 DirectoryEntry dir_entry = block_read_dir_entry(partition->data_blocks[block_address], i);
                 if (strcmp(dir_entry.filename, filename) == 0) {
-                    return dir_entry.inode_number;
+                    if (!insert_dir_entry(partition, new_dir_inode, dir_entry)) {
+                        return false;
+                    }
+
+                    dir_entry_set_values(&dir_entry, "", -1);
+                    block_write_dir_entry(&partition->data_blocks[block_address], i, dir_entry);
+
+                    return true;
                 }
             }
 
         }
     }
-    return -1;
+    return false;
 }

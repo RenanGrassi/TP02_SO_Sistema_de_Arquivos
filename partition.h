@@ -44,7 +44,7 @@ bool partition_create_dir(Partition *partition, char *dir_path, char *filename);
 bool partition_rename(Partition *partition, char *dir_path, char *filename, char *new_filename);
 bool partition_delete(Partition *partition, char *dir_path, char *filename);
 void partition_list(Partition *partition, char *dir_path);
-bool partition_move(Partition *partition, char *dir_path, char *filename);
+bool partition_move(Partition *partition, char *dir_path, char* new_dir_path, char *filename);
 
 
 
