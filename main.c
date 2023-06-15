@@ -34,6 +34,7 @@ int main(void) {
 
     Partition *partition = malloc(sizeof(Partition));
     char dir_path[MAX_FILENAME_SIZE];
+    char new_dir_path[MAX_FILENAME_SIZE];
 
     partition_init(partition);
     strcpy(dir_path, "/");
@@ -48,9 +49,16 @@ int main(void) {
     partition_create_file(partition, dir_path, "lorem_ipsum.txt");
     strcpy(dir_path, "/dir1/dir2");
     partition_create_file(partition, dir_path, "lorem_ipsum_small.txt");
+    strcpy(dir_path, "/dir1");
     partition_read_file(partition, dir_path, "lorem_ipsum.txt");
     strcpy(dir_path, "/dir1/dir2");
     partition_read_file(partition, dir_path, "lorem_ipsum_small.txt");
+    strcpy(dir_path, "/dir1");
+    strcpy(new_dir_path, "/");
+    partition_move(partition, dir_path, new_dir_path, "dir2");
+    strcpy(dir_path, "/dir2");
+    partition_read_file(partition, dir_path, "lorem_ipsum_small.txt");
+    strcpy(dir_path, "/");
     partition_list(partition, dir_path);
     free(partition);
 
