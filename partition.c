@@ -95,6 +95,7 @@ static int32_t find_inode_by_filepath(Partition *partition, char *filepath) {
     while (token != NULL) {
         inode_number = find_filename_in_dir(partition, inode, token);
         if (inode_number == -1) {
+            free(copy);
             return -1;
         }
 
