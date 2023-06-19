@@ -35,16 +35,17 @@ int main(void) {
     Partition *partition = malloc(sizeof(Partition));
 
     partition_init(partition);
-    partition_create_dir(partition, "/", "dir1");
-    partition_create_dir(partition, "/dir1", "dir2");
-    // partition_delete(partition, "/dir1"), "dir2");
-    partition_create_file(partition, "/dir1", "lorem_ipsum.txt");
-    partition_create_file(partition, "/dir1/dir2", "lorem_ipsum_small.txt");
-    partition_read_file(partition, "/dir1", "lorem_ipsum.txt");
-    partition_read_file(partition, "/dir1/dir2", "lorem_ipsum_small.txt");
-    partition_move(partition, "/dir1", "/", "dir2");
-    partition_read_file(partition, "/dir2", "lorem_ipsum_small.txt");
+    partition_create_dir(partition, "/dir1");
+    partition_create_dir(partition, "/dir1/dir2");
+    // partition_delete(partition, "/dir1/dir2");
+    partition_create_file(partition, "/dir1/lorem_ipsum.txt");
+    partition_create_file(partition, "/dir1/dir2/lorem_ipsum_small.txt");
+    partition_read_file(partition, "/dir1/lorem_ipsum.txt");
+    partition_read_file(partition, "/dir1/dir2/lorem_ipsum_small.txt");
+    partition_move(partition, "/dir1/dir2", "/");
+    partition_read_file(partition, "/dir2/lorem_ipsum_small.txt");
     partition_list(partition, "/");
+    // partition_list(partition, "/dir2");
     free(partition);
 
     // -----------------------------------------------------------------

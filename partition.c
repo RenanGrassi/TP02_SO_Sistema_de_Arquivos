@@ -140,9 +140,38 @@ static bool insert_dir_entry(Partition *partition, INode *dir_inode, DirectoryEn
     return false;
 }
 
+static bool split_path(const char *path, char *dir_path, char *filename) {
+    char *last_slash = strrchr(path, '/');
+
+    if (last_slash != NULL) {
+        // Split the string into two parts
+        size_t dir_length = last_slash - path;
+        strncpy(dir_path, path, dir_length);
+        dir_path[dir_length] = '\0';
+
+        strcpy(filename, last_slash + 1);
+
+        if (strlen(dir_path) == 0) {
+            // Handle the case when the directory is empty (root directory)
+            // Assign a specific value or handle it accordingly
+            strcpy(dir_path, "/");
+        }
+
+        return true;
+    } else {
+        return false;
+    }
+}
+
 // cria arquivo de a partir de um arquivo real do sistema de arquivos real da maquina
 // retorna true se criou o arquivo com sucesso, falso caso contrario
-bool partition_create_file(Partition *partition, char *dir_path, char *filename) {
+bool partition_create_file(Partition *partition, char *filepath) {
+    char dir_path[MAX_FILENAME_SIZE];
+    char filename[MAX_FILENAME_SIZE];
+    if (!split_path(filepath, dir_path, filename)) {
+        return false;
+    }
+
     int32_t inode_number = find_inode_by_filepath(partition, dir_path);
     if (inode_number == -1) {
         printf("Erro: diretorio não encontrado\n");
@@ -275,19 +304,7 @@ bool partition_create_file(Partition *partition, char *dir_path, char *filename)
 }
 
 // le arquivo e printa
-void partition_read_file(Partition *partition, char *dir_path, char *filename) {
-    char filepath[MAX_FILENAME_SIZE];
-    if (strcmp(dir_path, "/") == 0) {
-        strcpy(filepath, dir_path);
-        strcat(filepath, filename);
-    } else {
-        char slash[2];
-        strcpy(slash, "/");
-        strcpy(filepath, dir_path);
-        strcat(filepath, slash);
-        strcat(filepath, filename);
-    }
-
+void partition_read_file(Partition *partition, char *filepath) {
     int32_t inode_number = find_inode_by_filepath(partition, filepath);
     if (inode_number == -1) {
         printf("Erro: arquivo não encontrado\n");
@@ -331,7 +348,13 @@ void partition_read_file(Partition *partition, char *dir_path, char *filename) {
 }
 
 //cria diretorio
-bool partition_create_dir(Partition *partition, char *dir_path, char *filename) {
+bool partition_create_dir(Partition *partition, char *filepath) {
+    char dir_path[MAX_FILENAME_SIZE];
+    char filename[MAX_FILENAME_SIZE];
+    if (!split_path(filepath, dir_path, filename)) {
+        return false;
+    }
+
     // acha o inode do diretorio pelo dir_path
     int32_t inode_number = find_inode_by_filepath(partition, dir_path);
     if (inode_number == -1) {
@@ -373,7 +396,12 @@ bool partition_create_dir(Partition *partition, char *dir_path, char *filename) 
 }
 
 //Renomear tanto arquivos quanto diretorios
-bool partition_rename(Partition *partition, char *dir_path, char *filename, char *new_filename){
+bool partition_rename(Partition *partition, char *filepath, char *new_filename) {
+    char dir_path[MAX_FILENAME_SIZE];
+    char filename[MAX_FILENAME_SIZE];
+    if (!split_path(filepath, dir_path, filename)) {
+        return false;
+    }
     // acha o inode do diretorio pelo dir_path
     int32_t inode_number = find_inode_by_filepath(partition, dir_path);
     if (inode_number == -1) {
@@ -404,7 +432,13 @@ bool partition_rename(Partition *partition, char *dir_path, char *filename, char
 }
 
 //Remove arquivos e diretorios(só remove diretorios vazios para simplificar)
-bool partition_delete(Partition *partition, char *dir_path, char *filename){
+bool partition_delete(Partition *partition, char *filepath) {
+    char dir_path[MAX_FILENAME_SIZE];
+    char filename[MAX_FILENAME_SIZE];
+    if (!split_path(filepath, dir_path, filename)) {
+        return false;
+    }
+
     // acha o inode do diretorio pelo dir_path
     int32_t inode_number = find_inode_by_filepath(partition, dir_path);
     if (inode_number == -1) {
@@ -548,8 +582,14 @@ void partition_list(Partition *partition, char *dir_path){
     }
 }
 
-//mover arquivo ou diretório
-bool partition_move(Partition *partition, char *dir_path, char* new_dir_path, char *filename){
+// mover arquivo ou diretório para outro diretório
+bool partition_move(Partition *partition, char *filepath, char *dest_dir) {
+    char dir_path[MAX_FILENAME_SIZE];
+    char filename[MAX_FILENAME_SIZE];
+    if (!split_path(filepath, dir_path, filename)) {
+        return false;
+    }
+
     // acha o inode do diretorio pelo dir_path
     int32_t inode_number = find_inode_by_filepath(partition, dir_path);
     if (inode_number == -1) {
@@ -558,7 +598,7 @@ bool partition_move(Partition *partition, char *dir_path, char* new_dir_path, ch
     }
     INode *dir_inode = &partition->inodes[inode_number];
 
-    inode_number = find_inode_by_filepath(partition, new_dir_path);
+    inode_number = find_inode_by_filepath(partition, dest_dir);
     if (inode_number == -1) {
         printf("Erro: diretório não encontrado\n");
         return false;

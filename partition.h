@@ -38,13 +38,14 @@ typedef struct {
 } Partition;
 
 void partition_init(Partition *partition);
-bool partition_create_file(Partition *partition, char *dir_path, char *filename);
-void partition_read_file(Partition *partition, char *dir_path, char *filepath);
-bool partition_create_dir(Partition *partition, char *dir_path, char *filename);
-bool partition_rename(Partition *partition, char *dir_path, char *filename, char *new_filename);
-bool partition_delete(Partition *partition, char *dir_path, char *filename);
+bool partition_create_file(Partition *partition, char *filepath);
+void partition_read_file(Partition *partition, char *filepath);
+bool partition_create_dir(Partition *partition, char *filepath);
+bool partition_rename(Partition *partition, char *filepath, char *new_filename);
+bool partition_delete(Partition *partition, char *filepath);
 void partition_list(Partition *partition, char *dir_path);
-bool partition_move(Partition *partition, char *dir_path, char* new_dir_path, char *filename);
+bool partition_move(Partition *partition, char *filepath, char *dest_dir);
+
 
 
 
