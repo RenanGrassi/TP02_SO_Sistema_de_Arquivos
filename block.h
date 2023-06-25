@@ -8,9 +8,9 @@
 /*
 macros uteis:
     BLOCK_SIZE: tamanho de um bloco em bytes
-    BLOCK_ADDRESS_SIZE: tamanho de um bloco
 */
 
+#define BLOCK_ADDRESS_SIZE 4    // tamanho de endereço de bloco em bytes
 #define N_BLOCK_ADDRESSES (BLOCK_SIZE / BLOCK_ADDRESS_SIZE) // numero de enderecos de bloco que cabem em um bloco
 #define N_DIR_ENTRIES (BLOCK_SIZE / DIR_ENTRY_SIZE) // numero de entradas de diretorio que cabem em um bloco
 

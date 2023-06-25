@@ -44,8 +44,10 @@ int main(void) {
     partition_read_file(partition, "/dir1/dir2/lorem_ipsum_small.txt");
     partition_move(partition, "/dir1/dir2", "/");
     partition_read_file(partition, "/dir2/lorem_ipsum_small.txt");
-    partition_list(partition, "/");
+    // partition_delete(partition, "/dir2/lorem_ipsum_small.txt");
     // partition_list(partition, "/dir2");
+    partition_list(partition, "/dir2");
+    partition_list(partition, "/");
     free(partition);
 
     // -----------------------------------------------------------------

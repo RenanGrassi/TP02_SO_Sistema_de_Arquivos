@@ -2,10 +2,9 @@ CC = gcc
 MAIN_PROGRAM_NAME = main
 CFLAGS = -Wall -Wextra -pedantic -g -lm
 
-# MACROS (os valores são definidos em tempo de preprocessamento)
+# MACROS
 BLOCK_SIZE_KB ?= 4 	# tamanho do bloco em KB, 4 por padrao
 PARTITION_SIZE_MB ?= 10 # tamanho da particao em MB, 10 por padrao
-BLOCK_ADDRESS_SIZE = 4 # tamanho de endereço de bloco em bytes
 BLOCK_SIZE = $$(($(BLOCK_SIZE_KB) * 1024)) # tamanho do bloco em bytes
 PARTITION_SIZE = $$(($(PARTITION_SIZE_MB) * 1024 * 1024)) # tamanho da particao em bytes
 N_BLOCKS = $$(($(PARTITION_SIZE) / $(BLOCK_SIZE))) # numero total de blocos
@@ -19,8 +18,7 @@ MACROS = -DBLOCK_SIZE_KB=$(BLOCK_SIZE_KB) \
          -DPARTITION_SIZE=$(PARTITION_SIZE) \
          -DN_BLOCKS=$(N_BLOCKS) \
          -DN_INODES=$(N_INODES) \
-         -DN_DATA_BLOCKS=$(N_DATA_BLOCKS) \
-		 -DBLOCK_ADDRESS_SIZE=$(BLOCK_ADDRESS_SIZE) \
+         -DN_DATA_BLOCKS=$(N_DATA_BLOCKS)
 
 # Find all source files in the directory
 SRCS := $(wildcard *.c)
