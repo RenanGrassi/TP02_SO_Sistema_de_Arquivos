@@ -9,6 +9,7 @@
 #include "directory_entry.h"
 
 #define N_INODE_BLOCK_ADDRESSES 10
+#define MAX_FILESIZE (BLOCK_SIZE * ((N_INODE_BLOCK_ADDRESSES-1) + N_BLOCK_ADDRESSES)) // tamanho maximo de arquivo suportado pelo simulador
 
 typedef struct {
     char filename[MAX_FILENAME_SIZE]; // Nome do arquivo com tamanho fixo
@@ -18,14 +19,6 @@ typedef struct {
     time_t created_at; // Criado em...
     time_t modified_at; // Modificado em...
     time_t last_accessed_at; // Acessado em...
-
-    /* block_addresses armazena endereços de blocos diretos,
-       exceto o ultimo endereço, que pode ser um endereço de bloco indireto:
-        - inode de arquivo:
-            - ultimo endereço é usado exclusivamente como endereço de bloco indireto.
-            - dentro desse bloco indireto, são armazenados apenas endereços de blocos diretos.
-        - inode de diretorio:
-            - ultimo endereço é usado como endereço de bloco direto */
     int32_t block_addresses[N_INODE_BLOCK_ADDRESSES]; // Endereços de blocos
 } INode;
 
