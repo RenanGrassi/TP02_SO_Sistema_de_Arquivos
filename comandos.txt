@@ -1,0 +1,4 @@
+create_dir /dir1
+create_file /dir1/comandos.txt
+read_file /dir1/comandos.txt
+delete_file /dir1/comandos.txt
