@@ -15,7 +15,7 @@ typedef struct {
 } Partition;
 
 void partition_init(Partition *partition);
-bool partition_create_file(Partition *partition, char *filepath);
+bool partition_create_file(Partition *partition, char *dest_dir, char *filepath);
 void partition_read_file(Partition *partition, char *filepath);
 bool partition_create_dir(Partition *partition, char *filepath);
 bool partition_rename(Partition *partition, char *filepath, char *new_filename);

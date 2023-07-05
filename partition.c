@@ -11,6 +11,7 @@
 #include <string.h>
 #include <math.h>
 #include <sys/types.h>
+#include <libgen.h>
 
 void partition_init(Partition *partition) {
     for (int i = 0; i < N_DATA_BLOCKS; i++) {
@@ -163,22 +164,17 @@ static bool split_path(const char *path, char *dir_path, char *filename) {
     }
 }
 
-// cria arquivo de a partir de um arquivo real do sistema de arquivos real da maquina
+// cria arquivo real do sistema de arquivos real da maquina `filepath` no
+// diretorio `dest_dir` do simulador
 // retorna true se criou o arquivo com sucesso, falso caso contrario
-bool partition_create_file(Partition *partition, char *filepath) {
-    char dir_path[MAX_FILENAME_SIZE];
-    char filename[MAX_FILENAME_SIZE];
-    if (!split_path(filepath, dir_path, filename)) {
-        return false;
-    }
-
-    int32_t inode_number = find_inode_by_filepath(partition, dir_path);
+bool partition_create_file(Partition *partition, char *dest_dir, char *filepath) {
+    int32_t inode_number = find_inode_by_filepath(partition, dest_dir);
     if (inode_number == -1) {
         printf("Erro: diretorio não encontrado\n");
         return false;
     }
     INode *dir_inode = &partition->inodes[inode_number];
-    FILE *file = fopen(filename, "r");
+    FILE *file = fopen(filepath, "r");
     if (!file) {
         perror("error");
         fclose(file);
@@ -285,6 +281,7 @@ bool partition_create_file(Partition *partition, char *filepath) {
     partition->n_free_blocks -= n_blocks_file;
 
     // insere arquivo no diretorio
+    char *filename = basename(filepath);
     DirectoryEntry dir_entry;
     dir_entry_set_values(&dir_entry, filename, inode_number);
     insert_dir_entry(partition, dir_inode, dir_entry);

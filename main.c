@@ -28,7 +28,7 @@ int main(void) {
     partition_init(particao);
 
     int escolha;
-    char comando[200];
+    char dest[MAX_FILENAME_SIZE];
     char nome_arquivo[MAX_FILENAME_SIZE];
     FILE *arquivo;
 
@@ -42,10 +42,13 @@ int main(void) {
 
         switch (escolha) {
             case 1:
-                printf("Digite o caminho do arquivo: ");
+                printf("Digite o caminho do arquivo real: ");
                 fgets(nome_arquivo, sizeof(nome_arquivo), stdin);
                 nome_arquivo[strcspn(nome_arquivo, "\n")] = '\0'; // Remova o caractere de nova linha
-                if (partition_create_file(particao, nome_arquivo)) {
+                printf("Digite o caminho de destino: ");
+                fgets(dest, sizeof(dest), stdin);
+                dest[strcspn(dest, "\n")] = '\0';
+                if (partition_create_file(particao, dest, nome_arquivo)) {
                     printf(COR_VERDE "Arquivo criado com sucesso.\n" COR_RESET);
                 } else {
                     printf(COR_VERMELHO "Falha ao criar o arquivo.\n" COR_RESET);
@@ -72,9 +75,9 @@ int main(void) {
                 fgets(nome_arquivo, sizeof(nome_arquivo), stdin);
                 nome_arquivo[strcspn(nome_arquivo, "\n")] = '\0'; // Remova o caractere de nova linha
                 printf("Digite o novo nome: ");
-                fgets(comando, sizeof(comando), stdin);
-                comando[strcspn(comando, "\n")] = '\0'; // Remova o caractere de nova linha
-                if (partition_rename(particao, nome_arquivo, comando)) {
+                fgets(dest, sizeof(dest), stdin);
+                dest[strcspn(dest, "\n")] = '\0'; // Remova o caractere de nova linha
+                if (partition_rename(particao, nome_arquivo, dest)) {
                     printf(COR_VERDE "Diretório renomeado com sucesso.\n" COR_RESET);
                 } else {
                     printf(COR_VERMELHO "Falha ao renomear o diretório.\n" COR_RESET);
@@ -101,9 +104,9 @@ int main(void) {
                 fgets(nome_arquivo, sizeof(nome_arquivo), stdin);
                 nome_arquivo[strcspn(nome_arquivo, "\n")] = '\0'; // Remova o caractere de nova linha
                 printf("Digite o caminho de destino: ");
-                fgets(comando, sizeof(comando), stdin);
-                comando[strcspn(comando, "\n")] = '\0'; // Remova o caractere de nova linha
-                if (partition_move(particao, nome_arquivo, comando)) {
+                fgets(dest, sizeof(dest), stdin);
+                dest[strcspn(dest, "\n")] = '\0'; // Remova o caractere de nova linha
+                if (partition_move(particao, nome_arquivo, dest)) {
                     printf(COR_VERDE "Arquivo ou diretório movido com sucesso.\n" COR_RESET);
                 } else {
                     printf(COR_VERMELHO "Falha ao mover o arquivo ou diretório.\n" COR_RESET);
@@ -188,7 +191,7 @@ void executar_comando(Partition *particao, const char *comando) {
             printf(COR_VERMELHO "Argumento ausente para create_file.\n" COR_RESET);
             return;
         }
-        if (partition_create_file(particao, arg1)) {
+        if (partition_create_file(particao, arg1, arg2)) {
             printf(COR_VERDE "Arquivo criado com sucesso.\n" COR_RESET);
         } else {
             printf(COR_VERMELHO "Falha ao criar o arquivo.\n" COR_RESET);
