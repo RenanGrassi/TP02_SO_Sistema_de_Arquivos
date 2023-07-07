@@ -175,6 +175,9 @@ void executar_comando(Partition *particao, const char *comando) {
     char token[100];
     char arg1[100];
     char arg2[100];
+    memset(token, 0, 100);
+    memset(arg1, 0, 100);
+    memset(arg2, 0, 100);
 
     if (sscanf(copia_comando, "%s %s %s", token, arg1, arg2) < 1) {
         printf(COR_VERMELHO "Comando inválido.\n" COR_RESET);

@@ -1,4 +1,7 @@
 create_dir /dir1
 create_file /dir1 comandos.txt
 read_file /dir1/comandos.txt
+create_dir /dir1/dir2
+create_dir /dir1/dir2/dir3
 delete /dir1/comandos.txt
+create_file /dir1/dir2/dir3 lorem_ipsum.txt

@@ -27,8 +27,6 @@ void partition_init(Partition *partition) {
     // cria diretorio root "/"
     INode root;
     inode_init(&root);
-
-    // o primeiro bloco é sempre o root: mauricio, corrige se estiver errado :)
     strcpy(root.filename, "/");
     root.size = 0;
     root.is_directory = true;
@@ -124,6 +122,7 @@ static bool insert_dir_entry(Partition *partition, INode *dir_inode, DirectoryEn
             }
 
             dir_inode->block_addresses[i] = block_address;
+            memset(partition->data_blocks[block_address].data, 0, BLOCK_SIZE * sizeof(char));
             partition->free_blocks_bitmap[block_address] = 1;
             partition->n_free_blocks--;
         }
@@ -215,10 +214,11 @@ bool partition_create_file(Partition *partition, char *dest_dir, char *filepath)
 
         // preenche os blocos diretos
         for (int j = 0; j < N_INODE_BLOCK_ADDRESSES-1; j++) {
-            fread(buffer, 1, BLOCK_SIZE, file);
 
             block_address = find_free_block(partition);
-            // copiando dados para o arquivo simulado
+
+            // le do arquivo e coloca no bloco
+            fread(buffer, 1, BLOCK_SIZE, file);
             memcpy(partition->data_blocks[block_address].data, buffer, BLOCK_SIZE);
 
             partition->inodes[inode_number].block_addresses[j] = block_address;
@@ -238,16 +238,16 @@ bool partition_create_file(Partition *partition, char *dest_dir, char *filepath)
             if (j == remaining_blocks-1) {
                 memset(buffer, 0, BLOCK_SIZE);
             }
-            fread(buffer, 1, BLOCK_SIZE, file);
 
             block_address = find_free_block(partition);
-            partition->free_blocks_bitmap[block_address] = 1;
 
             // copiando dados para o arquivo simulado
+            fread(buffer, 1, BLOCK_SIZE, file);
             memcpy(partition->data_blocks[block_address].data, buffer, BLOCK_SIZE);
 
             // escreve o endereco no bloco indireto
             block_write_address(&partition->data_blocks[partition->inodes[inode_number].block_addresses[N_INODE_BLOCK_ADDRESSES-1]], j, block_address);
+            partition->free_blocks_bitmap[block_address] = 1;
         }
 
         // preenche o resto com -1
@@ -257,7 +257,7 @@ bool partition_create_file(Partition *partition, char *dest_dir, char *filepath)
 
     }
 
-    // se couber nos enderecos diretos
+    // se couber nos blocos diretos
     else {
         char buffer[BLOCK_SIZE];
         uint32_t block_address = -1;
@@ -265,15 +265,14 @@ bool partition_create_file(Partition *partition, char *dest_dir, char *filepath)
             if (j == n_blocks_file-1) {
                 memset(buffer, 0, BLOCK_SIZE);
             }
-            fread(buffer, 1, BLOCK_SIZE, file);
-
             block_address = find_free_block(partition);
-            partition->free_blocks_bitmap[block_address] = 1;
 
-            // copiando dados para o arquivo simulado
+            // le do arquivo e coloca no bloco
+            fread(buffer, 1, BLOCK_SIZE, file);
             memcpy(partition->data_blocks[block_address].data, buffer, BLOCK_SIZE);
 
             partition->inodes[inode_number].block_addresses[j] = block_address;
+            partition->free_blocks_bitmap[block_address] = 1;
         }
     }
 
@@ -294,7 +293,7 @@ bool partition_create_file(Partition *partition, char *dest_dir, char *filepath)
     partition->inodes[inode_number].created_at = time(NULL);
     partition->inodes[inode_number].last_accessed_at = partition->inodes[inode_number].created_at;
     partition->inodes[inode_number].modified_at = partition->inodes[inode_number].created_at;
-    partition->inodes[inode_number].permissions = 0777;
+    partition->inodes[inode_number].permissions = 644;
 
     fclose(file);
     return true;
@@ -387,7 +386,7 @@ bool partition_create_dir(Partition *partition, char *filepath) {
     partition->inodes[inode_number].created_at = time(NULL);
     partition->inodes[inode_number].last_accessed_at = partition->inodes[inode_number].created_at;
     partition->inodes[inode_number].modified_at = partition->inodes[inode_number].created_at;
-    partition->inodes[inode_number].permissions = 0777;
+    partition->inodes[inode_number].permissions = 777;
 
     return true;
 }
@@ -414,6 +413,7 @@ bool partition_rename(Partition *partition, char *filepath, char *new_filename) 
             return false;
         }
 
+        // procura a entrada de diretorio e renomeia o inode e a entrada de diretorio
         for (int i = 0; i < N_DIR_ENTRIES; i++) {
             DirectoryEntry dir_entry = block_read_dir_entry(partition->data_blocks[block_address], i);
             if (strcmp(dir_entry.filename, filename) == 0) {
@@ -428,7 +428,7 @@ bool partition_rename(Partition *partition, char *filepath, char *new_filename) 
     return false;
 }
 
-//Remove arquivos e diretorios(só remove diretorios vazios para simplificar)
+//Remove arquivos e diretorios(só remove diretorios vazios)
 bool partition_delete(Partition *partition, char *filepath) {
     char dir_path[MAX_FILENAME_SIZE];
     char filename[MAX_FILENAME_SIZE];
@@ -443,94 +443,96 @@ bool partition_delete(Partition *partition, char *filepath) {
         return false;
     }
     INode *dir_inode = &partition->inodes[inode_number];
-    if (dir_inode->is_directory == true) {
-        int32_t block_address = -1;
-        for (int i = 0; i < N_INODE_BLOCK_ADDRESSES ; i++) {
-            block_address = dir_inode->block_addresses[i];
+    int32_t direct_block_address = -1;
+    // blocos diretos do diretorio que contem o arquivo a ser deletado
+    for (int i = 0; i < N_INODE_BLOCK_ADDRESSES ; i++) {
+        direct_block_address = dir_inode->block_addresses[i];
 
-            if (block_address == -1) {
-                printf("Erro: arquivo não encontrado\n");
-                return false;
-            }
+        if (direct_block_address == -1) {
+            printf("Erro: arquivo não encontrado\n");
+            return false;
+        }
 
-            for (int i = 0; i < N_DIR_ENTRIES; i++) {
-                DirectoryEntry dir_entry = block_read_dir_entry(partition->data_blocks[block_address], i);
-                if (strcmp(dir_entry.filename, filename) == 0) {
-                    int32_t inode_number = dir_entry.inode_number;
-                    int32_t _block_address = -1;
-                    // remover diretorio é simplificado, só remove um diretorio que esta vazio
-                    if (partition->inodes[inode_number].is_directory == true) {
-                        int count = 0;
-                        for (int i = 0; i < N_INODE_BLOCK_ADDRESSES; i++) {
-                            _block_address = partition->inodes[inode_number].block_addresses[i];
-                            if (_block_address == -1) {
+        for (int i = 0; i < N_DIR_ENTRIES; i++) {
+            DirectoryEntry dir_entry = block_read_dir_entry(partition->data_blocks[direct_block_address], i);
+            if (strcmp(dir_entry.filename, filename) == 0) {
+                int32_t inode_number = dir_entry.inode_number;
+                int32_t block_address = -1;
+                // se for diretorio
+                if (partition->inodes[inode_number].is_directory == true) {
+                    int count = 0;
+                    for (int i = 0; i < N_INODE_BLOCK_ADDRESSES; i++) {
+                        block_address = partition->inodes[inode_number].block_addresses[i];
+                        if (block_address == -1) {
+                            break;
+                        }
+
+                        for (int j = 0; j < N_DIR_ENTRIES; j++) {
+                            DirectoryEntry dir_entry = block_read_dir_entry(partition->data_blocks[block_address], j);
+                            if (strlen(dir_entry.filename) > 0) {
+                                printf("Erro: diretório não vazio!\n");
+                                return false;
+                            }
+                        }
+                        count++;
+                    }
+                    // liberando os blocos
+                    for (int i = 0; i < count; i++) {
+                        block_address = partition->inodes[inode_number].block_addresses[i];
+                        partition->inodes[inode_number].block_addresses[i] = -1;
+                        partition->free_blocks_bitmap[block_address] = 0;
+                        partition->n_free_blocks++;
+                    }
+
+
+                }
+
+                // se for arquivo
+                else {
+                    // blocos diretos
+                    for (size_t i = 0; i < N_INODE_BLOCK_ADDRESSES - 1; i++){
+                        block_address = partition->inodes[inode_number].block_addresses[i];
+                        if (block_address != -1)
+                        {
+                            partition->free_blocks_bitmap[block_address] = 0;
+                            partition->n_free_blocks++;
+                            partition->inodes[inode_number].block_addresses[i] = -1;
+                        }
+
+
+                    }
+                    int32_t indirect_block_address = partition->inodes[inode_number].block_addresses[N_INODE_BLOCK_ADDRESSES - 1];
+                    if (indirect_block_address != -1) {
+                        for (size_t i = 0; i < N_BLOCK_ADDRESSES; i++)
+                        {
+                            block_address = block_read_address(partition->data_blocks[indirect_block_address], i);
+
+                            if (block_address == -1) {
                                 break;
                             }
-
-                            for (int i = 0; i < N_DIR_ENTRIES; i++) {
-                                DirectoryEntry dir_entry = block_read_dir_entry(partition->data_blocks[_block_address], i);
-                                if (strcmp(dir_entry.filename, "") != 0) {
-                                    printf("Erro: diretório não vazio!\n");
-                                    return false;
-                                }
-                            }
-                            count++;
-                        }
-                        // liberando os blocos
-                        for (int i = 0; i < count; i++) {
-                            _block_address = partition->inodes[inode_number].block_addresses[i];
-                            partition->inodes[inode_number].block_addresses[i] = -1;
-                            partition->free_blocks_bitmap[_block_address] = 0;
+                            partition->free_blocks_bitmap[block_address] = 0;
                             partition->n_free_blocks++;
-                        }
-
-
-                    } else {
-                        // blocos diretos
-                        for (size_t i = 0; i < N_INODE_BLOCK_ADDRESSES - 1; i++){
-                            _block_address = partition->inodes[inode_number].block_addresses[i];
-                            if (_block_address != -1)
-                            {
-                                partition->free_blocks_bitmap[_block_address] = 0;
-                                partition->n_free_blocks++;
-                                partition->inodes[inode_number].block_addresses[i] = -1;
-                            }
-
+                            // block_write_address(&partition->data_blocks[indirect_block_address], i, -1);
 
                         }
-                        int32_t indirect_block_address = partition->inodes[inode_number].block_addresses[N_INODE_BLOCK_ADDRESSES - 1];
-                        if (indirect_block_address != -1) {
-                            // preenche o bloco indireto com -1
-                            for (size_t i = 0; i < N_BLOCK_ADDRESSES; i++)
-                            {
-                                _block_address = block_read_address(partition->data_blocks[indirect_block_address], i);
-
-                                if (_block_address == -1) {
-                                    break;
-                                }
-                                partition->free_blocks_bitmap[_block_address] = 0;
-                                partition->n_free_blocks++;
-                                block_write_address(&partition->data_blocks[indirect_block_address], i, -1);
-
-                            }
-                            partition->inodes[inode_number].block_addresses[N_INODE_BLOCK_ADDRESSES - 1] = -1;
-                            partition->free_blocks_bitmap[indirect_block_address] = 0;
-                            partition->n_free_blocks++;
-                        }
+                        partition->inodes[inode_number].block_addresses[N_INODE_BLOCK_ADDRESSES - 1] = -1;
+                        partition->free_blocks_bitmap[indirect_block_address] = 0;
+                        partition->n_free_blocks++;
                     }
-                    partition->inodes[inode_number].size = 0;
-                    partition->inodes[inode_number].permissions = -1;
-                    partition->inodes[inode_number].is_directory = false;
-                    partition->inodes[inode_number].created_at = -1;
-                    partition->inodes[inode_number].modified_at = -1;
-                    partition->inodes[inode_number].last_accessed_at = -1;
-                    strcpy(partition->inodes[inode_number].filename, "");
-
-                    // remove entrada de diretorio do arquivo/diretorio excluido
-                    dir_entry_set_values(&dir_entry, "", -1);
-                    block_write_dir_entry(&partition->data_blocks[block_address], i, dir_entry);
-                    return true;
                 }
+                // remove inode
+                partition->inodes[inode_number].size = 0;
+                partition->inodes[inode_number].permissions = -1;
+                partition->inodes[inode_number].is_directory = false;
+                partition->inodes[inode_number].created_at = -1;
+                partition->inodes[inode_number].modified_at = -1;
+                partition->inodes[inode_number].last_accessed_at = -1;
+                strcpy(partition->inodes[inode_number].filename, "");
+
+                // remove entrada de diretorio do arquivo/diretorio excluido
+                dir_entry_set_values(&dir_entry, "", -1);
+                block_write_dir_entry(&partition->data_blocks[direct_block_address], i, dir_entry);
+                return true;
             }
         }
     }
