@@ -99,6 +99,7 @@ static int32_t find_inode_by_filepath(Partition *partition, char *filepath) {
         }
 
         inode = partition->inodes[inode_number];
+        partition->inodes[inode_number].last_accessed_at = time(NULL);
         token = strtok(NULL, "/");
     }
     free(copy);
