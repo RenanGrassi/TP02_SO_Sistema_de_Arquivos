@@ -33,7 +33,7 @@ void partition_init(Partition *partition) {
     root.created_at = time(NULL);
     root.last_accessed_at = root.created_at;
     root.modified_at =  root.created_at;
-    root.permissions = 0777; // 777 em octal
+    root.permissions = 777;
 
     // o primeiro inode é sempre o root
     partition->inodes[0] = root;
